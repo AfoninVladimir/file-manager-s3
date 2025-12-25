@@ -1,0 +1,127 @@
+﻿<section id="fileMamager" style="margin-top: 10vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="file-manager" v-cloak>
+        <div class="file-manager-header">
+            <div class="file-manager-header-path">
+                <span>/</span>
+                <a href="#" class="file-manager-header-folder">folder</a>
+                <span>/</span>
+            </div>
+            <div class="control-board">
+                <button type="button" class="btn btn-danger" v-on:click="DeleteObjects()" v-if="checkboxes.length > 0">Удалить ({{ checkboxes.length }})</button>
+                <button type="button" class="btn" v-on:click="showModalFileUploader()">Загрузить</button>
+                <button type="button" class="btn" v-on:click="showModalInput(0)">Создать папку</button>
+            </div>
+        </div>
+        <div class="file-manager-body">
+            <div class="file-manager-table-header">
+                <div class="file-manager-table-header-item name-folder">
+                    <label class="label-checkbox file-manager-checkbox">
+                        <input type="checkbox" class="checkbox" v-model="allChecked" v-on:change="CheckedAll" />
+                        <span class="checkmark"></span>
+                    </label>
+                    <span>Имя</span>
+                </div>
+                <div class="file-manager-table-header-item date"><span>Дата</span></div>
+                <div class="file-manager-table-header-item size"><span>Размер</span></div>
+                <div class="file-manager-table-header-item action"><span>Действия</span></div>
+            </div>
+            <div class="file-manager-table-body">
+                <div v-for="object in objects" class="file-manager-table-column">
+                    <div class="file-manager-table-row name-folder">
+                        <label class="label-checkbox file-manager-checkbox">
+                            <input type="checkbox" class="checkbox" v-bind:value="object.key" v-model="checkboxes" v-on:change="CheckChecked()" />
+                            <span class="checkmark"></span>
+                        </label>
+                        <div class="folder" v-if="object.type == 0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6h-6.3l-.3-.9C12 3.8 10.9 3 9.6 3H5C3.3 3 2 4.3 2 6v13c0 1.7 1.3 3 3 3h14c1.7 0 3-1.3 3-3V9c0-1.7-1.3-3-3-3z"></path></svg>
+                        </div>
+                        <div class="folder" v-if="object.type == 1">
+                            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24" height="24" viewBox="0 0 48 48">
+                                <path fill="#90CAF9" d="M40 45L8 45 8 3 30 3 40 13z"></path>
+                                <path fill="#E1F5FE" d="M38.5 14L29 14 29 4.5z"></path>
+                                <path fill="#1565C0" d="M21 23L14 33 28 33z"></path>
+                                <path fill="#1976D2" d="M28 26.4L23 33 33 33zM31.5 23A1.5 1.5 0 1 0 31.5 26 1.5 1.5 0 1 0 31.5 23z"></path>
+                            </svg>
+                        </div>
+                        <div class="file-title">
+                            <span>{{ object.key }}</span>
+                        </div>
+
+                    </div>
+                    <div class="file-manager-table-row date">
+                        <div v-if="object.size > 0">
+                            {{ object.lastModified }}
+                        </div>
+                    </div>
+                    <div class="file-manager-table-row size">
+                        <div v-if="object.size > 0">
+                            {{ object.size }} {{ object.unit }}
+                        </div>
+                    </div>
+                    <div class="file-manager-table-row action">
+                        <button type="button" class="btn btn-action" v-on:click="(event) => { btnAction(event); setActiveDirectory(object.key); }">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm14 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" fill="currentColor"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <section class="modal" id="modalFileUploader">
+        <form class="file-uploader" enctype="multipart/form-data" method="post">
+            <label class="file-uploader-header" for="inputFile">
+                <div class="file-uploader-info">
+                    <div class="icon-uploaded"></div>
+                    <p class="info">Выберите файл</p>
+                </div>
+            </label>
+            <input type="file" id="inputFile" name="file" class="hidden" multiple="multiple" />
+            <input type="button" class="btn" style="margin-top: 20px;" value="Сохранить" v-on:click="submitFile()" />
+            <div class="file-uploader-items" id="fileUploaderItems">
+            </div>
+        </form>
+    </section>
+    <section class="modal" id="modalInput">
+        <div class="modal-input">
+            <input type="text" class="input-text" v-model="inputFileName" />
+            <button type="button" class="btn" v-on:click="ApplyFileInput()">Применить</button>
+        </div>
+    </section>
+    <section class="modal" id="preloader">
+        <div class="preloader">
+        </div>
+    </section>
+
+    <div class="block-action" id="action">
+        <div class="action-item" v-on:click="showModalInput(1)">
+            <div class="action-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"></path>
+                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"></path>
+                </svg>
+            </div>
+            <span>Переименовать</span>
+        </div>
+        <div class="action-item" v-on:click="AploudedObject()">
+            <div class="action-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"></path>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"></path>
+                </svg>
+            </div>
+            <span>Скачать</span>
+        </div>
+        <div class="action-item" v-on:click="DeleteObject()">
+            <div class="action-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                    <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"></path>
+                </svg>
+            </div>
+            <span>Удалить</span>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/s3.js" asp-append-version="true"></script>
+}
